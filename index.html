@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cinema Translate Pro</title>
+  <style>
+    :root {
+      --bg-color: #0f0f12;       /* Very dark blue/black */
+      --card-bg: #1c1c21;        /* Slightly lighter card */
+      --text-main: #e0e0e0;      /* Off-white text */
+      --text-muted: #8a8a93;     /* Muted gray */
+      --accent: #d4af37;         /* Luxury Gold */
+      --accent-hover: #b5952f;
+      --border: #2d2d35;
+      --success: #10b981;
+      --error: #ef4444;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
+
+    h1 {
+      font-weight: 300;
+      letter-spacing: 1px;
+      margin: 0 0 10px;
+      color: white;
+      text-align: center;
+      font-size: 2.2rem;
+    }
+    
+    h1 span { color: var(--accent); font-weight: 600; }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      font-size: 0.95rem;
+    }
+
+    /* --- LAYOUT GRID --- */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    /* --- INPUTS & SELECTS --- */
+    .grid-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"], 
+    input[type="number"], 
+    select, 
+    textarea {
+      width: 100%;
+      background: #000000;
+      border: 1px solid var(--border);
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+    }
+
+    /* --- FILE UPLOAD STYLING --- */
+    .file-upload-wrapper {
+      position: relative;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 30px;
+      text-align: center;
+      transition: border-color 0.2s;
+      cursor: pointer;
+    }
+    .file-upload-wrapper:hover { border-color: var(--accent); }
+    
+    input[type="file"] {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      align-items: center;
+    }
+
+    button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    button:hover { background: var(--accent-hover); }
+    button:active { transform: scale(0.98); }
+    button:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+
+    #btnPause { background: #f59e0b; color: white; }
+    
+    /* --- PROGRESS BAR --- */
+    #progressContainer {
+      margin-top: 20px;
+      background: #000;
+      border-radius: 100px;
+      height: 8px;
+      overflow: hidden;
+      display: none; /* Hidden by default */
+    }
+    
+    #progressBar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #fff);
+      width: 0%;
+      transition: width 0.4s ease;
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .status-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* --- EDITOR AREA --- */
+    #editorArea {
+      margin-top: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #000;
+      padding: 10px;
+    }
+
+    .sub-row {
+      display: flex;
+      gap: 12px;
+      background: var(--card-bg);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--border);
+    }
+    
+    .sub-row:hover { border-left-color: var(--accent); }
+
+    .sub-times {
+      display: flex;
+      flex-direction: column;
+      width: 140px;
+      gap: 5px;
+    }
+    
+    .sub-times input {
+      padding: 6px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      text-align: center;
+      background: #000;
+      border: 1px solid var(--border);
+    }
+
+    .sub-text { flex: 1; }
+    .sub-text textarea {
+      height: 100%;
+      min-height: 60px;
+      resize: vertical;
+      border: none;
+      background: transparent;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 24px;
+    }
+    
+    .preview-box textarea {
+      height: 150px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-color); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  </style>
+</head>
+<body>
+
+  <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0f0f12; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; transition: opacity 0.5s;">
+    <h1 style="margin-bottom:20px; color:white;">CINEMA <span style="color:#d4af37;">TRANSLATE</span></h1>
+    <div style="background:#1c1c21; padding:30px; border-radius:12px; border:1px solid #2d2d35; text-align:center; width:300px;">
+        <p style="color:#8a8a93; margin-bottom:15px;">Enter Access Password</p>
+        <input type="password" id="accessPass" placeholder="••••••••" style="width:100%; padding:12px; background:#000000; border:1px solid #2d2d35; border-radius:8px; color:white; text-align:center; margin-bottom:15px; box-sizing:border-box;">
+        <button id="btnLogin" style="width:100%; background:#d4af37; color:#000; border:none; padding:12px 24px; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer;">Unlock</button>
+        <p id="loginMsg" style="color:red; font-size:0.8rem; margin-top:10px; height:1rem;"></p>
+    </div>
+  </div>
+
+  <h1>CINEMA <span>TRANSLATE</span></h1>
+  <p class="subtitle">AI-Powered Subtitle Studio • Azure • Gemini • GPT-4o</p>
+
+  <div class="container">
+    
+    <div class="card">
+      
+      <div class="file-upload-wrapper">
+        <input id="srtFile" type="file" />
+        <div style="pointer-events: none;">
+          <div style="font-size: 2rem; margin-bottom: 10px;">📂</div>
+          <strong style="color: white;">Drop SRT File Here</strong>
+          <div style="color: var(--text-muted); font-size: 0.85rem; margin-top:5px;">or click to browse</div>
+        </div>
+      </div>
+
+      <div class="status-text" id="fileStatus" style="justify-content: center; margin-top: 10px; color: var(--accent);"></div>
+
+      <hr style="border: 0; border-top: 1px solid var(--border); margin: 24px 0;">
+
+      <div class="grid-form">
+        <div class="form-group">
+          <label>Translation Model</label>
+          <select id="provider">
+            <option value="gemini" selected>✨ Gemini 2.0 (Free)</option>
+            <option value="azure">🔹 Azure (Standard)</option>
+            <option value="openai-mini">🧠 GPT-4o Mini (Cheaper)</option>
+            
+            <option value="super_hybrid">⚡ Super Hybrid (LOCKED)</option>
+            <option value="openai-full">🚀 GPT-4o (LOCKED)</option>
+            <option value="deepl">🟣 DeepL (LOCKED)</option>
+          </select>
+        </div>
+
+        <div id="vipSection" class="form-group" style="display:none; border: 1px solid var(--accent); padding: 10px; border-radius: 8px;">
+            <label style="color: var(--accent);">🔒 Enter 1-Time Passcode</label>
+            <input type="text" id="vipPasscode" placeholder="e.g. VIP-1234" style="border-color: var(--accent); transition: all 0.3s ease;">
+            <small id="vipStatus" style="display: block; margin-top: 5px; font-size: 0.85rem;"></small>
+        </div>
+
+        <div class="form-group">
+          <label>Source Language</label>
+          <select id="fromLang">
+            <option value="en" selected>English</option>
+            <option value="ja">Japanese</option>
+            <option value="zh-Hans">Chinese</option>
+            <option value="th">Thai</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Target Language</label>
+          <select id="toLang">
+            <option value="my" selected>Burmese (Myanmar)</option>
+            <option value="ja">Japanese</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Smart Context</label>
+            <select id="smartContext">
+              <option value="true" selected>ON (Remember History)</option>
+              <option value="false">OFF (Simple Mode)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+          <label>Movie Genre (Adjusts Tone)</label>
+          <select id="movieType">
+            <option value="general" selected>General / Modern</option>
+            <option value="action">🔫 Action / Crime (Aggressive Slang)</option>
+            <option value="romance">💖 Romance / Drama (Soft & Emotional)</option>
+            <option value="comedy">😂 Comedy (Casual & Funny)</option>
+            <option value="historical">👑 Historical / Fantasy (Royal Language)</option>
+            <option value="documentary">📜 Documentary (Formal & Accurate)</option>
+            <option value="horror">👻 Horror / Thriller (Tense & Scary)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Time Shift (ms)</label>
+          <input id="timeOffset" type="number" value="0" placeholder="0" />
+        </div>
+        
+        <div class="form-group">
+          <label>Merge Lines</label>
+          <select id="mergeLines">
+            <option value="true" selected>Merge (Better Grammar)</option>
+            <option value="false">Keep Original Breaks</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label>Movie Plot / Scene Context</label>
+        <input type="text" id="movieContext" placeholder="e.g. Action movie, two cops arguing in a car. Casual tone.">
+        <div class="muted">💡 Add context for much better AI translations! Describe the scene, characters, tone, and setting.</div>
+      </div>
+
+      <div class="form-group">
+        <label>Glossary (Names)</label>
+        <input type="text" id="glossary" placeholder="e.g. John=ဂျွန်, Mary=မေရီ">
+      </div>
+
+      <div class="btn-row">
+        <button id="btnTranslate">▶ Start Translation</button>
+        <button id="btnPause" style="display:none;">Pause</button>
+        <button id="btnDownload" disabled style="background: var(--border); color:white;">⬇ Download SRT</button>
+        <span id="status" style="margin-left: auto; font-size: 0.9rem;"></span>
+      </div>
+
+      <div id="progressSection" style="display: none;">
+        <div id="progressContainer">
+            <div id="progressBar"></div>
+        </div>
+        <div class="status-text">
+            <span id="progressText">0%</span>
+            <span>Time Left: <b id="timeLeft" style="color: var(--accent);">--</b></span>
+        </div>
+      </div>
+
+    </div> <div class="preview-grid">
+        <div class="preview-box">
+            <div class="form-group">
+                <label>Original Preview</label>
+                <textarea id="originalPreview" readonly placeholder="Uploaded text will appear here..."></textarea>
+            </div>
+        </div>
+        <div class="preview-box">
+             <div class="form-group">
+                <label>Translation Preview (Live)</label>
+                <textarea id="translatedPreview" readonly placeholder="Translations will stream here..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div id="editorWrapper" style="display:none;">
+        <div style="margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+            <h3 style="color:white; font-size:1.1rem; margin:0;">Live Editor</h3>
+            <span style="color:var(--text-muted); font-size:0.8rem;">Edit while it translates. Changes are saved to download.</span>
+        </div>
+        <div id="editorArea"></div>
+    </div>
+
+  </div> <script>
+  const API_BASE = ""; // Use current domain
+  
+  // --- LOGIN LOGIC ---
+  const loginOverlay = document.getElementById("loginOverlay");
+  const accessInput = document.getElementById("accessPass");
+  const btnLogin = document.getElementById("btnLogin");
+  const loginMsg = document.getElementById("loginMsg");
+  
+  // 1. Check if user already logged in before
+  const savedPass = localStorage.getItem("cinema_key");
+  if (savedPass) {
+      accessInput.value = savedPass;
+      // Auto-test the saved password quietly
+      checkPassword(savedPass, true);
+  }
+
+  // 2. Button Click
+  btnLogin.addEventListener("click", () => checkPassword(accessInput.value));
+
+  // 3. Password Checker Function
+  async function checkPassword(pass, isAuto = false) {
+      if (!isAuto) {
+          btnLogin.textContent = "Checking...";
+          btnLogin.disabled = true;
+      }
+
+      // We test the password by trying to fetch the 'get-memory' route
+      try {
+          const resp = await fetch(`${API_BASE}/get-memory`, {
+              headers: { "x-access-token": pass }
+          });
+
+          if (resp.status === 403) {
+              throw new Error("Wrong Password");
+          }
+
+          // Success!
+          loginOverlay.style.opacity = "0";
+          setTimeout(() => loginOverlay.remove(), 500); // Remove after fade out
+          localStorage.setItem("cinema_key", pass); // Save for next time
+
+      } catch (e) {
+          if (!isAuto) {
+              loginMsg.textContent = "Incorrect Password";
+              btnLogin.textContent = "Unlock";
+              btnLogin.disabled = false;
+              localStorage.removeItem("cinema_key");
+          }
+      }
+  }
+
+  // --- PREMIUM LOCK UI ---
+  const providerSelect = document.getElementById("provider");
+  const vipSection = document.getElementById("vipSection");
+  const vipPasscodeInput = document.getElementById("vipPasscode");
+  const vipStatus = document.getElementById("vipStatus");
+  
+  providerSelect.addEventListener("change", () => {
+      const locked = ["super_hybrid", "openai-full", "deepl"];
+      if (locked.includes(providerSelect.value)) {
+          vipSection.style.display = "block";
+          vipPasscodeInput.focus();
+      } else {
+          vipSection.style.display = "none";
+          vipPasscodeInput.value = ""; // Clear it
+          resetVipStyle();
+      }
+  });
+
+  // VIP Code Validation
+  let vipValidationTimeout;
+  vipPasscodeInput.addEventListener("input", () => {
+      const code = vipPasscodeInput.value.trim().toUpperCase();
+      
+      // Reset if empty
+      if (!code) {
+          resetVipStyle();
+          return;
+      }
+      
+      // Debounce validation
+      clearTimeout(vipValidationTimeout);
+      vipValidationTimeout = setTimeout(() => validateVipCode(code), 500);
+  });
+
+  async function validateVipCode(code) {
+      try {
+          const response = await fetch(`/validate-vip/${encodeURIComponent(code)}`);
+          const data = await response.json();
+          
+          if (data.valid) {
+              // Valid - turn green
+              vipPasscodeInput.style.borderColor = "#10b981";
+              vipPasscodeInput.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+              vipPasscodeInput.style.boxShadow = "0 0 10px rgba(16, 185, 129, 0.3)";
+              vipStatus.textContent = "✅ Valid code!";
+              vipStatus.style.color = "#10b981";
+          } else {
+              // Invalid - turn red
+              vipPasscodeInput.style.borderColor = "#ef4444";
+              vipPasscodeInput.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+              vipPasscodeInput.style.boxShadow = "0 0 10px rgba(239, 68, 68, 0.3)";
+              vipStatus.textContent = "❌ " + (data.reason || "Invalid code");
+              vipStatus.style.color = "#ef4444";
+          }
+      } catch (error) {
+          console.error("Validation error:", error);
+          resetVipStyle();
+      }
+  }
+
+  function resetVipStyle() {
+      vipPasscodeInput.style.borderColor = "var(--accent)";
+      vipPasscodeInput.style.backgroundColor = "";
+      vipPasscodeInput.style.boxShadow = "";
+      vipStatus.textContent = "";
+  }
+
+  // Elements
+  const srtFile = document.getElementById("srtFile");
+  const fileStatus = document.getElementById("fileStatus");
+  const btnTranslate = document.getElementById("btnTranslate");
+  const btnDownload = document.getElementById("btnDownload");
+  const btnPause = document.getElementById("btnPause");
+  const statusEl = document.getElementById("status");
+  const originalPreview = document.getElementById("originalPreview");
+  const translatedPreview = document.getElementById("translatedPreview");
+  const editorArea = document.getElementById("editorArea");
+  const editorWrapper = document.getElementById("editorWrapper");
+  const progressSection = document.getElementById("progressSection");
+  
+  // Progress Elements
+  const bar = document.getElementById("progressBar");
+  const txt = document.getElementById("progressText");
+  const timeLbl = document.getElementById("timeLeft");
+
+  // State Variables
+  let startTime = 0;
+  let translatedSrtContent = "";
+
+  function setStatus(msg, color="var(--text-muted)") {
+    statusEl.style.color = color;
+    statusEl.textContent = msg;
+  }
+
+  // 1. File Upload Logic
+  srtFile.addEventListener("change", async () => {
+    const file = srtFile.files?.[0];
+    if (!file) return;
+
+    fileStatus.textContent = `Selected: ${file.name}`;
+    btnDownload.disabled = true;
+    btnDownload.style.background = "var(--border)";
+    
+    // Clear previews
+    translatedPreview.value = "";
+    translatedSrtContent = "";
+    
+    // Show preview text
+    const text = await file.text();
+    originalPreview.value = text.substring(0, 1000) + "... (truncated)";
+  });
+
+  // 2. Start Translation
+  btnTranslate.addEventListener("click", async () => {
+    const file = srtFile.files?.[0];
+    if (!file) return setStatus("⚠ Please upload an SRT file first", "var(--error)");
+
+    // UI Updates
+    setStatus("Connecting to AI...", "var(--accent)");
+    progressSection.style.display = "block";
+    editorWrapper.style.display = "block";
+    btnPause.style.display = "inline-block";
+    
+    // Scroll to editor
+    setTimeout(() => {
+      editorWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+    
+    // Reset Progress & Timer
+    bar.style.width = "0%";
+    txt.textContent = "0%";
+    timeLbl.textContent = "Calculating...";
+    editorArea.innerHTML = "";
+    translatedPreview.value = "";
+    translatedSrtContent = "";
+    startTime = Date.now();
+
+    // Prepare Data
+    const form = new FormData();
+    form.append("file", file);
+    form.append("from", document.getElementById("fromLang").value);
+    form.append("to", document.getElementById("toLang").value);
+    form.append("provider", document.getElementById("provider").value);
+    form.append("timeOffset", document.getElementById("timeOffset").value);
+    form.append("mergeLines", document.getElementById("mergeLines").value);
+    form.append("smartContext", document.getElementById("smartContext").value);
+    form.append("movieContext", document.getElementById("movieContext").value);
+    form.append("movieType", document.getElementById("movieType").value);
+    form.append("glossary", document.getElementById("glossary").value);
+    form.append("vipPasscode", document.getElementById("vipPasscode").value);
+
+    try {
+      const response = await fetch(`${API_BASE}/translate-srt-stream`, { 
+          method: "POST", 
+          headers: { "x-access-token": localStorage.getItem("cinema_key") },
+          body: form 
+      });
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        // Decode chunk and add to buffer
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Split by double newline (standard SSE format)
+        let parts = buffer.split("\n\n");
+        
+        // Keep the last part in buffer (it might be incomplete)
+        buffer = parts.pop(); 
+
+        for (const part of parts) {
+          if (!part.startsWith("data: ")) continue;
+          const jsonStr = part.replace("data: ", "").trim();
+          if (!jsonStr) continue;
+
+          try {
+            const data = JSON.parse(jsonStr);
+
+            if (data.error) throw new Error(data.error);
+
+            if (data.type === "line") {
+              // --- A. UPDATE PROGRESS ---
+              const percent = Math.round((data.current / data.total) * 100);
+              bar.style.width = percent + "%";
+              txt.textContent = percent + "%";
+
+              // --- B. UPDATE TIME REMAINING (Client Side Math) ---
+              const elapsedSeconds = (Date.now() - startTime) / 1000;
+              const linesPerSecond = data.current / elapsedSeconds;
+              const linesLeft = data.total - data.current;
+              
+              if (linesPerSecond > 0) {
+                 const secondsLeft = Math.round(linesLeft / linesPerSecond);
+                 // Format nicely (MM:SS)
+                 const mins = Math.floor(secondsLeft / 60);
+                 const secs = secondsLeft % 60;
+                 timeLbl.textContent = `${mins}m ${secs}s`;
+              }
+
+              // --- C. ADD TO LIVE EDITOR ---
+              appendEditorRow(data.index, data.time, data.text);
+              
+              // --- D. UPDATE TRANSLATION PREVIEW ---
+              translatedSrtContent += `${data.index}\n${data.time}\n${data.text}\n\n`;
+              translatedPreview.value = translatedSrtContent;
+            }
+            
+            if (data.type === "done") {
+              btnDownload.disabled = false;
+              btnDownload.style.background = "var(--success)";
+              btnPause.style.display = "none";
+              bar.style.width = "100%";
+              txt.textContent = "100%";
+              timeLbl.textContent = "Finished";
+              setStatus("✔ Translation Complete!", "var(--success)");
+            }
+          } catch (e) { 
+             console.log("JSON Parse Error (ignoring chunk):", e); 
+          }
+        }
+      }
+    } catch (e) {
+      setStatus("Error: " + e.message, "var(--error)");
+    }
+  });
+
+  // 3. Helper: Add row to Editor (With SAVE Button)
+  function appendEditorRow(index, timeStr, text) {
+    const [start, end] = timeStr.split(" --> ");
+    
+    // Create the container row
+    const row = document.createElement("div");
+    row.className = "sub-row";
+    
+    // Create HTML
+    row.innerHTML = `
+      <div class="sub-times">
+        <label>#${index}</label>
+        <input type="text" class="time-start" value="${start ? start.trim() : ''}">
+        <input type="text" class="time-end" value="${end ? end.trim() : ''}">
+        
+        <button class="btn-save-line" title="Save this translation to training data for future AI improvement" style="margin-top:5px; background:#2d2d35; border:1px solid #444; font-size:0.7rem; padding:4px;">
+           ⭐ Save
+        </button>
+      </div>
+      
+      <div class="sub-text">
+        <textarea class="text-content">${text}</textarea>
+      </div>
+    `;
+
+    // Add Logic to the Button
+    const btnSave = row.querySelector(".btn-save-line");
+    const txtArea = row.querySelector(".text-content");
+
+    btnSave.addEventListener("click", async () => {
+        const currentText = txtArea.value;
+        const originalText = "User manually saved this line"; // ideally we'd pass the original English here too if available
+        
+        btnSave.textContent = "⏳...";
+        
+        try {
+            await fetch(`${API_BASE}/save-line`, {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "x-access-token": localStorage.getItem("cinema_key")
+                },
+                body: JSON.stringify({ 
+                    original: "Manual Save (Row " + index + ")", // You can improve this to grab English if you want
+                    translated: currentText 
+                })
+            });
+            
+            btnSave.textContent = "✅ Saved";
+            btnSave.style.background = "var(--success)";
+            btnSave.style.color = "black";
+        } catch (e) {
+            btnSave.textContent = "❌ Error";
+        }
+    });
+
+    editorArea.appendChild(row);
+  }
+
+  // 4. Download Logic
+  btnDownload.addEventListener("click", () => {
+    const rows = editorArea.querySelectorAll(".sub-row");
+    let newSrt = "";
+    rows.forEach((row, i) => {
+      const start = row.querySelector(".time-start").value;
+      const end = row.querySelector(".time-end").value;
+      const text = row.querySelector(".text-content").value;
+      newSrt += `${i + 1}\n${start} --> ${end}\n${text}\n\n`;
+    });
+    const blob = new Blob([newSrt], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `translated_${Date.now()}.srt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  // 5. Pause Logic
+  btnPause.addEventListener("click", async () => {
+    const isPausing = btnPause.textContent === "Pause";
+    const action = isPausing ? "pause" : "resume";
+    await fetch(`${API_BASE}/control`, {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "x-access-token": localStorage.getItem("cinema_key")
+        },
+        body: JSON.stringify({ action })
+    });
+    btnPause.textContent = isPausing ? "Resume" : "Pause";
+    btnPause.style.background = isPausing ? "var(--success)" : "#f59e0b";
+  });
+
+  </script>
+</body>
+</html>
