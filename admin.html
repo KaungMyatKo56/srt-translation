@@ -118,6 +118,18 @@
     
     <button onclick="handleLogin()" style="width: 100%; max-width: none;">Login</button>
     
+    <!-- Backup Code Section -->
+    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #333;">
+        <button onclick="toggleBackupSection()" style="width: 100%; background: #444; color: #ccc; border: none; padding: 8px; cursor: pointer; font-size: 0.9rem;">
+            🔑 Forgot Password? Use Backup Code
+        </button>
+        
+        <div id="backupSection" style="display: none; margin-top: 10px;">
+            <input type="password" id="backupCodeInput" placeholder="Enter backup secret code" autocomplete="off" style="width: 100%; margin-bottom: 10px;">
+            <button onclick="resetWithBackupCode()" style="width: 100%; background: #666;">Reset Password</button>
+        </div>
+    </div>
+    
     <div id="loginMsg" class="msg" style="display:none;"></div>
     
     <p style="text-align: center; color: #666; margin-top: 20px; font-size: 0.9rem;">
@@ -130,6 +142,32 @@
     <div class="top-bar">
         <h1>👑 VIP Code Manager</h1>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+    
+    <!-- Change Admin Password -->
+    <div class="card">
+        <h3>🔐 Change Admin Password</h3>
+        <p style="color: #aaa; margin-bottom: 15px;">Update the admin login password</p>
+        
+        <div style="display: flex; gap: 10px;">
+            <input type="password" id="newAdminPassword" placeholder="Enter new password" maxlength="50">
+            <button onclick="changeAdminPassword()">Change Password</button>
+        </div>
+        
+        <div id="adminPassMsg" class="msg" style="display:none;"></div>
+    </div>
+
+    <!-- Backup Secret Code -->
+    <div class="card">
+        <h3>🛡️ Backup Secret Code</h3>
+        <p style="color: #aaa; margin-bottom: 15px;">Set a secret code to reset admin password if forgotten</p>
+        
+        <div style="display: flex; gap: 10px;">
+            <input type="password" id="backupSecretCode" placeholder="Enter backup code" maxlength="50">
+            <button onclick="setBackupCode()">Set Backup Code</button>
+        </div>
+        
+        <div id="backupMsg" class="msg" style="display:none;"></div>
     </div>
 
     <!-- Generate Codes -->
@@ -160,8 +198,9 @@
 </div>
 
 <script>
-    const API_BASE = window.location.origin;
-    const ADMIN_PASSWORD = "123admin"; // Must match server's ADMIN_PASSWORD
+    let API_BASE = window.location.origin;
+    let ADMIN_PASSWORD = "123admin"; // Must match server's ADMIN_PASSWORD
+    let BACKUP_SECRET_CODE = localStorage.getItem("backup_secret_code") || ""; // Backup code for password reset
 
     // ===== ON PAGE LOAD =====
     window.addEventListener("load", () => {
@@ -223,6 +262,85 @@
         showLogin();
     }
 
+    // ===== CHANGE ADMIN PASSWORD =====
+    function changeAdminPassword() {
+        const newPass = document.getElementById("newAdminPassword").value.trim();
+        const msg = document.getElementById("adminPassMsg");
+
+        if (!newPass) {
+            showMessage(msg, "❌ Please enter a password", "error");
+            return;
+        }
+
+        if (newPass.length < 3) {
+            showMessage(msg, "❌ Password must be at least 3 characters", "error");
+            return;
+        }
+
+        // Update the constant and show success
+        ADMIN_PASSWORD = newPass;
+        showMessage(msg, "✅ Admin password updated successfully!", "success");
+        document.getElementById("newAdminPassword").value = "";
+        
+        // Logout after password change
+        setTimeout(() => {
+            showMessage(msg, "✅ Logging out to apply changes...", "success");
+            setTimeout(() => {
+                handleLogout();
+            }, 1000);
+        }, 500);
+    }
+
+    // ===== SET BACKUP SECRET CODE =====
+    function setBackupCode() {
+        const code = document.getElementById("backupSecretCode").value.trim();
+        const msg = document.getElementById("backupMsg");
+
+        if (!code) {
+            showMessage(msg, "❌ Please enter a backup code", "error");
+            return;
+        }
+
+        if (code.length < 3) {
+            showMessage(msg, "❌ Backup code must be at least 3 characters", "error");
+            return;
+        }
+
+        // Save to localStorage
+        BACKUP_SECRET_CODE = code;
+        localStorage.setItem("backup_secret_code", code);
+        showMessage(msg, "✅ Backup secret code set successfully!", "success");
+        document.getElementById("backupSecretCode").value = "";
+    }
+
+    // ===== TOGGLE BACKUP SECTION =====
+    function toggleBackupSection() {
+        const section = document.getElementById("backupSection");
+        section.style.display = section.style.display === "none" ? "block" : "none";
+    }
+
+    // ===== RESET WITH BACKUP CODE =====
+    function resetWithBackupCode() {
+        const code = document.getElementById("backupCodeInput").value.trim();
+        const msg = document.getElementById("loginMsg");
+
+        if (!code) {
+            showMessage(msg, "❌ Please enter the backup code", "error");
+            return;
+        }
+
+        if (code === BACKUP_SECRET_CODE) {
+            // Reset admin password to default
+            ADMIN_PASSWORD = "123admin";
+            showMessage(msg, "✅ Password reset to default! Use '123admin' to login.", "success");
+            document.getElementById("backupCodeInput").value = "";
+            document.getElementById("backupSection").style.display = "none";
+        } else {
+            showMessage(msg, "❌ Invalid backup code", "error");
+            document.getElementById("backupCodeInput").value = "";
+        }
+    }
+
     // ===== GENERATE CODE =====
     async function generateCode() {
         const btn = document.getElementById("btnGenerate");
@@ -234,7 +352,7 @@
         display.style.display = "none";
 
         try {
-            const adminPass = "123admin"; // Fixed admin password
+            const adminPass = ADMIN_PASSWORD; // Use current admin password
             console.log("📡 Fetching /generate-vip with admin auth");
             const response = await fetch(`${API_BASE}/generate-vip`, {
                 headers: {
@@ -278,7 +396,7 @@
         btn.textContent = "Loading...";
 
         try {
-            const adminPass = "123admin"; // Fixed admin password
+            const adminPass = ADMIN_PASSWORD; // Use current admin password
             const response = await fetch(`${API_BASE}/admin/codes`, {
                 headers: {
                     "x-admin-password": adminPass

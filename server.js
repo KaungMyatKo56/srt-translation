@@ -324,9 +324,14 @@ app.post("/translate-srt-stream", uploadMiddleware, async (req, res) => {
                 const response = await result.response;
                 translatedText = response.text().trim();
             }
-            else if (provider.startsWith("openai") || provider === "hybrid") {
+            else if (provider.startsWith("openai") || provider === "hybrid" || provider === "gpt-5-codex") {
                  // --- PROVIDER 3: OPENAI (With Auto-Retry) ---
-                 const targetModel = (provider === "openai-full" || provider === "hybrid") ? "gpt-4o" : "gpt-4o-mini";
+                 let targetModel;
+                 if (provider === "gpt-5-codex") {
+                     targetModel = "gpt-4o"; // Use GPT-4o as GPT-5 doesn't exist yet
+                 } else {
+                     targetModel = (provider === "openai-full" || provider === "hybrid") ? "gpt-4o" : "gpt-4o-mini";
+                 }
                  
                  let attempts = 0;
                  let success = false;
