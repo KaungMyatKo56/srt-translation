@@ -352,7 +352,7 @@
         display.style.display = "none";
 
         try {
-            const adminPass = ADMIN_PASSWORD; // Use current admin password
+            const adminPass = "123admin"; // Server expects fixed password from .env
             console.log("📡 Fetching /generate-vip with admin auth");
             const response = await fetch(`${API_BASE}/generate-vip`, {
                 headers: {
@@ -396,7 +396,7 @@
         btn.textContent = "Loading...";
 
         try {
-            const adminPass = ADMIN_PASSWORD; // Use current admin password
+            const adminPass = "123admin"; // Server expects fixed password from .env
             const response = await fetch(`${API_BASE}/admin/codes`, {
                 headers: {
                     "x-admin-password": adminPass
