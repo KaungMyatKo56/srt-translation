@@ -23,22 +23,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("."));
 
-/* ---------------- SECURITY GATE ---------------- */
-app.use((req, res, next) => {
-    // 1. Allow loading the HTML/CSS/JS files (so they can see the login page)
-    if (req.method === "GET") return next();
-
-    // 2. Check Password for all other requests (Translate, Save, etc.)
-    const userPassword = req.headers["x-access-token"];
-    const serverPassword = process.env.APP_PASSWORD;
-
-    if (userPassword === serverPassword) {
-        next(); // Password correct! Proceed.
-    } else {
-        console.log(`⛔ Blocked unauthorized access attempt.`);
-        res.status(403).json({ error: "⛔ Access Denied: Wrong Password" });
-    }
-});
+// No password gate - open access for all routes
 
 const PORT = 8080;
 

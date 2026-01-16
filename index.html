@@ -247,16 +247,6 @@
 </head>
 <body>
 
-  <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0f0f12; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; transition: opacity 0.5s;">
-    <h1 style="margin-bottom:20px; color:white;">CINEMA <span style="color:#d4af37;">TRANSLATE</span></h1>
-    <div style="background:#1c1c21; padding:30px; border-radius:12px; border:1px solid #2d2d35; text-align:center; width:300px;">
-        <p style="color:#8a8a93; margin-bottom:15px;">Enter Access Password</p>
-        <input type="password" id="accessPass" placeholder="••••••••" style="width:100%; padding:12px; background:#000000; border:1px solid #2d2d35; border-radius:8px; color:white; text-align:center; margin-bottom:15px; box-sizing:border-box;">
-        <button id="btnLogin" style="width:100%; background:#d4af37; color:#000; border:none; padding:12px 24px; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer;">Unlock</button>
-        <p id="loginMsg" style="color:red; font-size:0.8rem; margin-top:10px; height:1rem;"></p>
-    </div>
-  </div>
-
   <h1>CINEMA <span>TRANSLATE</span></h1>
   <p class="subtitle">AI-Powered Subtitle Studio • Azure • Gemini • GPT-4o</p>
 
@@ -405,55 +395,6 @@
   </div> <script>
   const API_BASE = ""; // Use current domain
   
-  // --- LOGIN LOGIC ---
-  const loginOverlay = document.getElementById("loginOverlay");
-  const accessInput = document.getElementById("accessPass");
-  const btnLogin = document.getElementById("btnLogin");
-  const loginMsg = document.getElementById("loginMsg");
-  
-  // 1. Check if user already logged in before
-  const savedPass = localStorage.getItem("cinema_key");
-  if (savedPass) {
-      accessInput.value = savedPass;
-      // Auto-test the saved password quietly
-      checkPassword(savedPass, true);
-  }
-
-  // 2. Button Click
-  btnLogin.addEventListener("click", () => checkPassword(accessInput.value));
-
-  // 3. Password Checker Function
-  async function checkPassword(pass, isAuto = false) {
-      if (!isAuto) {
-          btnLogin.textContent = "Checking...";
-          btnLogin.disabled = true;
-      }
-
-      // We test the password by trying to fetch the 'get-memory' route
-      try {
-          const resp = await fetch(`${API_BASE}/get-memory`, {
-              headers: { "x-access-token": pass }
-          });
-
-          if (resp.status === 403) {
-              throw new Error("Wrong Password");
-          }
-
-          // Success!
-          loginOverlay.style.opacity = "0";
-          setTimeout(() => loginOverlay.remove(), 500); // Remove after fade out
-          localStorage.setItem("cinema_key", pass); // Save for next time
-
-      } catch (e) {
-          if (!isAuto) {
-              loginMsg.textContent = "Incorrect Password";
-              btnLogin.textContent = "Unlock";
-              btnLogin.disabled = false;
-              localStorage.removeItem("cinema_key");
-          }
-      }
-  }
-
   // --- PREMIUM LOCK UI ---
   const providerSelect = document.getElementById("provider");
   const vipSection = document.getElementById("vipSection");
@@ -608,7 +549,6 @@
     try {
       const response = await fetch(`${API_BASE}/translate-srt-stream`, { 
           method: "POST", 
-          headers: { "x-access-token": localStorage.getItem("cinema_key") },
           body: form 
       });
       const reader = response.body.getReader();
@@ -723,8 +663,7 @@
             await fetch(`${API_BASE}/save-line`, {
                 method: "POST",
                 headers: { 
-                    "Content-Type": "application/json",
-                    "x-access-token": localStorage.getItem("cinema_key")
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ 
                     original: "Manual Save (Row " + index + ")", // You can improve this to grab English if you want
@@ -770,8 +709,7 @@
     await fetch(`${API_BASE}/control`, {
         method: "POST",
         headers: { 
-            "Content-Type": "application/json",
-            "x-access-token": localStorage.getItem("cinema_key")
+            "Content-Type": "application/json"
         },
         body: JSON.stringify({ action })
     });
