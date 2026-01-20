@@ -324,14 +324,49 @@ app.post("/translate-srt-stream", uploadMiddleware, async (req, res) => {
                 const response = await result.response;
                 translatedText = response.text().trim();
             }
-            else if (provider.startsWith("openai") || provider === "hybrid" || provider === "gpt-5-codex") {
+            // 3. DEEPL (Direct Translation)
+            else if (provider === "deepl") {
+                try {
+                    // DeepL supported languages (limited set)
+                    const deeplLanguages = ['BG', 'CS', 'DA', 'DE', 'EL', 'EN', 'ES', 'ET', 'FI', 'FR', 'HU', 'ID', 'IT', 'JA', 'KO', 'LT', 'LV', 'NB', 'NL', 'PL', 'PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'TR', 'UK', 'ZH'];
+                    
+                    const targetLang = to.toUpperCase();
+                    const sourceLang = from.toUpperCase();
+                    
+                    if (!deeplLanguages.includes(targetLang) || !deeplLanguages.includes(sourceLang)) {
+                        console.error(`DeepL Error: Language not supported. Source: ${sourceLang}, Target: ${targetLang}`);
+                        throw new Error(`DeepL doesn't support ${from} to ${to} translation. Supported languages: ${deeplLanguages.join(', ')}`);
+                    }
+                    
+                    const deeplResponse = await fetch('https://api.deepl.com/v2/translate', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `DeepL-Auth-Key ${process.env.DEEPL_API_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: [cleanText],
+                            target_lang: targetLang,
+                            source_lang: sourceLang
+                        })
+                    });
+                    
+                    if (!deeplResponse.ok) {
+                        const errorText = await deeplResponse.text();
+                        console.error("DeepL API Error:", deeplResponse.status, errorText);
+                        throw new Error(`DeepL API failed: ${deeplResponse.status}`);
+                    }
+                    
+                    const deeplData = await deeplResponse.json();
+                    translatedText = deeplData.translations?.[0]?.text || cleanText;
+                } catch (err) {
+                    console.error("DeepL Error:", err.message);
+                    throw err; // Throw error to show user
+                }
+            }
+            else if (provider.startsWith("openai") || provider === "hybrid") {
                  // --- PROVIDER 3: OPENAI (With Auto-Retry) ---
-                 let targetModel;
-                 if (provider === "gpt-5-codex") {
-                     targetModel = "gpt-4o"; // Use GPT-4o as GPT-5 doesn't exist yet
-                 } else {
-                     targetModel = (provider === "openai-full" || provider === "hybrid") ? "gpt-4o" : "gpt-4o-mini";
-                 }
+                 const targetModel = (provider === "openai-full" || provider === "hybrid") ? "gpt-4o" : "gpt-4o-mini";
                  
                  let attempts = 0;
                  let success = false;
