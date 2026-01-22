@@ -277,7 +277,6 @@
             
             <option value="super_hybrid">⚡ Super Hybrid (LOCKED)</option>
             <option value="openai-full">🚀 GPT-4o (LOCKED)</option>
-            <option value="deepl">🟣 DeepL (LOCKED)</option>
           </select>
         </div>
 
@@ -403,7 +402,7 @@
   const vipStatus = document.getElementById("vipStatus");
   
   providerSelect.addEventListener("change", () => {
-      const locked = ["super_hybrid", "openai-full", "deepl"];
+      const locked = ["super_hybrid", "openai-full"];
       if (locked.includes(providerSelect.value)) {
           vipSection.style.display = "block";
           vipPasscodeInput.focus();

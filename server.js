@@ -86,7 +86,7 @@ app.post("/translate-srt-stream", uploadMiddleware, async (req, res) => {
     const { from = "en", to = "my", provider = "gemini", mergeLines, timeOffset, movieContext, glossary, vipPasscode } = req.body;
 
     // --- LOCK PREMIUM PROVIDERS ---
-    const premiumModels = ["super_hybrid", "openai-full", "deepl"]; // locked list
+    const premiumModels = ["super_hybrid", "openai-full"]; // REMOVED "deepl"
     
     if (premiumModels.includes(provider)) {
         if (!vipPasscode) {
@@ -198,8 +198,8 @@ app.post("/translate-srt-stream", uploadMiddleware, async (req, res) => {
         try {
             // A. SUPER HYBRID: The "Avengers" Strategy
             if (provider === "super_hybrid") {
-                // 1. Run ALL FOUR in Parallel (Azure, Gemini, GPT, DeepL)
-                const [azureResult, geminiResult, gptResult, deeplResult] = await Promise.allSettled([
+                // 1. Run THREE in Parallel (Azure, Gemini, GPT) - REMOVED DEEPL
+                const [azureResult, geminiResult, gptResult] = await Promise.allSettled([
                     // Task 1: Azure
                     fetch(
                         `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=${from}&to=${to}`,
@@ -229,43 +229,27 @@ app.post("/translate-srt-stream", uploadMiddleware, async (req, res) => {
                             temperature: 0.3,
                         });
                         return completion.choices[0].message.content.trim();
-                    })(),
-
-                    // Task 4: DeepL
-                    fetch('https://api.deepl.com/v2/translate', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `DeepL-Auth-Key ${process.env.DEEPL_API_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            text: [cleanText],
-                            target_lang: to.toUpperCase(),
-                            source_lang: from.toUpperCase()
-                        })
-                    }).then(r => r.json()).then(d => d.translations?.[0]?.text || "")
+                    })()
                 ]);
 
                 // Extract drafts (handle failures gracefully)
                 const draftAzure = azureResult.status === "fulfilled" ? azureResult.value : "(Azure Failed)";
                 const draftGemini = geminiResult.status === "fulfilled" ? geminiResult.value : "(Gemini Failed)";
                 const draftGPT = gptResult.status === "fulfilled" ? gptResult.value : "(GPT Failed)";
-                const draftDeepL = deeplResult.status === "fulfilled" ? deeplResult.value : "(DeepL Failed)";
 
-                // 2. The Boss (GPT-4o) decides the final version from FOUR drafts
+                // 2. The Boss (GPT-4o) decides the final version from THREE drafts
                 const completion = await openai.chat.completions.create({
-                    model: "gpt-4o", // Must use the smart model for editing
+                    model: "gpt-4o",
                     messages: [
                         { 
                           role: "system", 
                           content: `You are a Chief Subtitle Editor.
                           
-                          Task: Create the PERFECT Burmese translation by combining the strengths of four AI drafts.
+                          Task: Create the PERFECT Burmese translation by combining the strengths of three AI drafts.
                           
                           - Draft 1 (Azure) is usually literal and accurate with nouns.
                           - Draft 2 (Gemini) is usually natural and good with slang.
                           - Draft 3 (GPT) is usually balanced and creative.
-                          - Draft 4 (DeepL) is usually smooth and professional.
                           
                           Goal: Output ONE final sentence that sounds like a native Myanmar speaker (Natural Spoken Style/စကားပြော).
                           ` 
@@ -277,7 +261,6 @@ app.post("/translate-srt-stream", uploadMiddleware, async (req, res) => {
                           Draft 1 (Azure): "${draftAzure}"
                           Draft 2 (Gemini): "${draftGemini}"
                           Draft 3 (GPT): "${draftGPT}"
-                          Draft 4 (DeepL): "${draftDeepL}"
                           
                           Final Polish:` 
                         }
@@ -323,46 +306,6 @@ app.post("/translate-srt-stream", uploadMiddleware, async (req, res) => {
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 translatedText = response.text().trim();
-            }
-            // 3. DEEPL (Direct Translation)
-            else if (provider === "deepl") {
-                try {
-                    // DeepL supported languages (limited set)
-                    const deeplLanguages = ['BG', 'CS', 'DA', 'DE', 'EL', 'EN', 'ES', 'ET', 'FI', 'FR', 'HU', 'ID', 'IT', 'JA', 'KO', 'LT', 'LV', 'NB', 'NL', 'PL', 'PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'TR', 'UK', 'ZH'];
-                    
-                    const targetLang = to.toUpperCase();
-                    const sourceLang = from.toUpperCase();
-                    
-                    if (!deeplLanguages.includes(targetLang) || !deeplLanguages.includes(sourceLang)) {
-                        console.error(`DeepL Error: Language not supported. Source: ${sourceLang}, Target: ${targetLang}`);
-                        throw new Error(`DeepL doesn't support ${from} to ${to} translation. Supported languages: ${deeplLanguages.join(', ')}`);
-                    }
-                    
-                    const deeplResponse = await fetch('https://api.deepl.com/v2/translate', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `DeepL-Auth-Key ${process.env.DEEPL_API_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            text: [cleanText],
-                            target_lang: targetLang,
-                            source_lang: sourceLang
-                        })
-                    });
-                    
-                    if (!deeplResponse.ok) {
-                        const errorText = await deeplResponse.text();
-                        console.error("DeepL API Error:", deeplResponse.status, errorText);
-                        throw new Error(`DeepL API failed: ${deeplResponse.status}`);
-                    }
-                    
-                    const deeplData = await deeplResponse.json();
-                    translatedText = deeplData.translations?.[0]?.text || cleanText;
-                } catch (err) {
-                    console.error("DeepL Error:", err.message);
-                    throw err; // Throw error to show user
-                }
             }
             else if (provider.startsWith("openai") || provider === "hybrid") {
                  // --- PROVIDER 3: OPENAI (With Auto-Retry) ---
