@@ -55,6 +55,56 @@
       gap: 24px;
     }
 
+    /* --- TAB MENU STYLES --- */
+    .tab-menu {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      background: #000;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: #222;
+      color: white;
+    }
+
+    /* --- VIEW SECTIONS --- */
+    .view-section {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -223,6 +273,54 @@
       line-height: 1.6;
     }
 
+    /* --- AEGISUB EDITOR STYLES --- */
+    .time-nudge-group {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-bottom: 5px;
+    }
+    .nudge-btn {
+      background: #333;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 4px;
+      font-size: 0.6rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .nudge-btn:hover { background: var(--accent); color: black; }
+    
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: white;
+      border-radius: 4px;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+    .btn-icon:hover { background: #333; }
+
+    .editor-toolbar {
+      display: flex;
+      gap: 15px;
+      background: #111;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 15px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .hotkey-badge {
+      background: #333;
+      color: #ffd700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.75rem;
+    }
+
     .preview-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -252,147 +350,195 @@
 
   <div class="container">
     
-    <div class="card">
+    <div class="tab-menu">
+      <button class="tab-btn active" onclick="switchTab('translate')" id="btnTab1">⚙️ 1. Translate &amp; Setup</button>
+      <button class="tab-btn" onclick="switchTab('edit')" id="btnTab2">🎬 2. Video &amp; Live Editor</button>
+    </div>
+
+    <div id="view-translate" class="view-section active">
       
-      <div class="file-upload-wrapper">
-        <input id="srtFile" type="file" />
-        <div style="pointer-events: none;">
-          <div style="font-size: 2rem; margin-bottom: 10px;">📂</div>
-          <strong style="color: white;">Drop SRT File Here</strong>
-          <div style="color: var(--text-muted); font-size: 0.85rem; margin-top:5px;">or click to browse</div>
-        </div>
-      </div>
-
-      <div class="status-text" id="fileStatus" style="justify-content: center; margin-top: 10px; color: var(--accent);"></div>
-
-      <hr style="border: 0; border-top: 1px solid var(--border); margin: 24px 0;">
-
-      <div class="grid-form">
-        <div class="form-group">
-          <label>Translation Model</label>
-          <select id="provider">
-            <option value="gemini" selected>✨ Gemini 2.0 (Free)</option>
-            <option value="azure">🔹 Azure (Standard)</option>
-            <option value="openai-mini">🧠 GPT-4o Mini (Cheaper)</option>
-            
-            <option value="super_hybrid">⚡ Super Hybrid (LOCKED)</option>
-            <option value="openai-full">🚀 GPT-4o (LOCKED)</option>
-          </select>
-        </div>
-
-        <div id="vipSection" class="form-group" style="display:none; border: 1px solid var(--accent); padding: 10px; border-radius: 8px;">
-            <label style="color: var(--accent);">🔒 Enter 1-Time Passcode</label>
-            <input type="text" id="vipPasscode" placeholder="e.g. VIP-1234" style="border-color: var(--accent); transition: all 0.3s ease;">
-            <small id="vipStatus" style="display: block; margin-top: 5px; font-size: 0.85rem;"></small>
-        </div>
-
-        <div class="form-group">
-          <label>Source Language</label>
-          <select id="fromLang">
-            <option value="en" selected>English</option>
-            <option value="ja">Japanese</option>
-            <option value="zh-Hans">Chinese</option>
-            <option value="th">Thai</option>
-            <option value="my">Burmese</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Target Language</label>
-          <select id="toLang">
-            <option value="my" selected>Burmese (Myanmar)</option>
-            <option value="ja">Japanese</option>
-            <option value="en">English</option>
-          </select>
-        </div>
+      <div class="card">
         
-        <div class="form-group">
-            <label>Smart Context</label>
-            <select id="smartContext">
-              <option value="true" selected>ON (Remember History)</option>
-              <option value="false">OFF (Simple Mode)</option>
+        <div class="file-upload-wrapper">
+          <input id="srtFile" type="file" />
+          <div style="pointer-events: none;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">📂</div>
+            <strong style="color: white;">Drop SRT File Here</strong>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin-top:5px;">or click to browse</div>
+          </div>
+        </div>
+
+        <div class="status-text" id="fileStatus" style="justify-content: center; margin-top: 10px; color: var(--accent);"></div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 24px 0;">
+
+        <div class="grid-form">
+          <div class="form-group">
+            <label>Translation Model</label>
+            <select id="provider">
+              <option value="gemini" selected>✨ Gemini 2.0 (Free)</option>
+              <option value="azure">🔹 Azure (Standard)</option>
+              <option value="openai-mini">🧠 GPT-4o Mini (Cheaper)</option>
+              
+              <option value="super_hybrid">⚡ Super Hybrid (LOCKED)</option>
+              <option value="openai-full">🚀 GPT-4o (LOCKED)</option>
             </select>
+          </div>
+
+          <div id="vipSection" class="form-group" style="display:none; border: 1px solid var(--accent); padding: 10px; border-radius: 8px;">
+              <label style="color: var(--accent);">🔒 Enter 1-Time Passcode</label>
+              <input type="text" id="vipPasscode" placeholder="e.g. VIP-1234" style="border-color: var(--accent); transition: all 0.3s ease;">
+              <small id="vipStatus" style="display: block; margin-top: 5px; font-size: 0.85rem;"></small>
+          </div>
+
+          <div class="form-group">
+            <label>Source Language</label>
+            <select id="fromLang">
+              <option value="en" selected>English</option>
+              <option value="ja">Japanese</option>
+              <option value="zh-Hans">Chinese</option>
+              <option value="th">Thai</option>
+              <option value="my">Burmese</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Target Language</label>
+            <select id="toLang">
+              <option value="my" selected>Burmese (Myanmar)</option>
+              <option value="ja">Japanese</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+              <label>Smart Context</label>
+              <select id="smartContext">
+                <option value="true" selected>ON (Remember History)</option>
+                <option value="false">OFF (Simple Mode)</option>
+              </select>
+          </div>
+
+          <div class="form-group">
+            <label>Movie Genre (Adjusts Tone)</label>
+            <select id="movieType">
+              <option value="general" selected>General / Modern</option>
+              <option value="action">🔫 Action / Crime (Aggressive Slang)</option>
+              <option value="romance">💖 Romance / Drama (Soft & Emotional)</option>
+              <option value="comedy">😂 Comedy (Casual & Funny)</option>
+              <option value="historical">👑 Historical / Fantasy (Royal Language)</option>
+              <option value="documentary">📜 Documentary (Formal & Accurate)</option>
+              <option value="horror">👻 Horror / Thriller (Tense & Scary)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Time Shift (ms)</label>
+            <input id="timeOffset" type="number" value="0" placeholder="0" />
+          </div>
+          
+          <div class="form-group">
+            <label>Merge Lines</label>
+            <select id="mergeLines">
+              <option value="true" selected>Merge (Better Grammar)</option>
+              <option value="false">Keep Original Breaks</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>Movie Plot / Scene Context</label>
+          <input type="text" id="movieContext" placeholder="e.g. Action movie, two cops arguing in a car. Casual tone.">
+          <div class="muted">💡 Add context for much better AI translations! Describe the scene, characters, tone, and setting.</div>
         </div>
 
         <div class="form-group">
-          <label>Movie Genre (Adjusts Tone)</label>
-          <select id="movieType">
-            <option value="general" selected>General / Modern</option>
-            <option value="action">🔫 Action / Crime (Aggressive Slang)</option>
-            <option value="romance">💖 Romance / Drama (Soft & Emotional)</option>
-            <option value="comedy">😂 Comedy (Casual & Funny)</option>
-            <option value="historical">👑 Historical / Fantasy (Royal Language)</option>
-            <option value="documentary">📜 Documentary (Formal & Accurate)</option>
-            <option value="horror">👻 Horror / Thriller (Tense & Scary)</option>
-          </select>
+          <label>Glossary (Names)</label>
+          <input type="text" id="glossary" placeholder="e.g. John=ဂျွန်, Mary=မေရီ">
         </div>
 
-        <div class="form-group">
-          <label>Time Shift (ms)</label>
-          <input id="timeOffset" type="number" value="0" placeholder="0" />
+        <div class="btn-row">
+          <button id="btnTranslate">▶ Start Translation</button>
+          <button id="btnPause" style="display:none;">Pause</button>
+          <button id="btnDownload" disabled style="background: var(--border); color:white;">⬇ Download SRT</button>
+          <span id="status" style="margin-left: auto; font-size: 0.9rem;"></span>
         </div>
-        
-        <div class="form-group">
-          <label>Merge Lines</label>
-          <select id="mergeLines">
-            <option value="true" selected>Merge (Better Grammar)</option>
-            <option value="false">Keep Original Breaks</option>
-          </select>
+
+        <div id="progressSection" style="display: none;">
+          <div id="progressContainer">
+              <div id="progressBar"></div>
+          </div>
+          <div class="status-text">
+              <span id="progressText">0%</span>
+              <span>Time Left: <b id="timeLeft" style="color: var(--accent);">--</b></span>
+          </div>
         </div>
+
       </div>
 
-      <div class="form-group" style="margin-bottom: 16px;">
-        <label>Movie Plot / Scene Context</label>
-        <input type="text" id="movieContext" placeholder="e.g. Action movie, two cops arguing in a car. Casual tone.">
-        <div class="muted">💡 Add context for much better AI translations! Describe the scene, characters, tone, and setting.</div>
+      <div class="preview-grid">
+          <div class="preview-box">
+              <div class="form-group">
+                  <label>Original Preview</label>
+                  <textarea id="originalPreview" readonly placeholder="Uploaded text will appear here..."></textarea>
+              </div>
+          </div>
+          <div class="preview-box">
+               <div class="form-group">
+                  <label>Translation Preview (Live)</label>
+                  <textarea id="translatedPreview" readonly placeholder="Translations will stream here..."></textarea>
+              </div>
+          </div>
       </div>
 
-      <div class="form-group">
-        <label>Glossary (Names)</label>
-        <input type="text" id="glossary" placeholder="e.g. John=ဂျွန်, Mary=မေရီ">
-      </div>
-
-      <div class="btn-row">
-        <button id="btnTranslate">▶ Start Translation</button>
-        <button id="btnPause" style="display:none;">Pause</button>
-        <button id="btnDownload" disabled style="background: var(--border); color:white;">⬇ Download SRT</button>
-        <span id="status" style="margin-left: auto; font-size: 0.9rem;"></span>
-      </div>
-
-      <div id="progressSection" style="display: none;">
-        <div id="progressContainer">
-            <div id="progressBar"></div>
-        </div>
-        <div class="status-text">
-            <span id="progressText">0%</span>
-            <span>Time Left: <b id="timeLeft" style="color: var(--accent);">--</b></span>
-        </div>
-      </div>
-
-    </div> <div class="preview-grid">
-        <div class="preview-box">
-            <div class="form-group">
-                <label>Original Preview</label>
-                <textarea id="originalPreview" readonly placeholder="Uploaded text will appear here..."></textarea>
-            </div>
-        </div>
-        <div class="preview-box">
-             <div class="form-group">
-                <label>Translation Preview (Live)</label>
-                <textarea id="translatedPreview" readonly placeholder="Translations will stream here..."></textarea>
-            </div>
-        </div>
     </div>
 
-    <div id="editorWrapper" style="display:none;">
-        <div style="margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
-            <h3 style="color:white; font-size:1.1rem; margin:0;">Live Editor</h3>
-            <span style="color:var(--text-muted); font-size:0.8rem;">Edit while it translates. Changes are saved to download.</span>
+    <div id="view-edit" class="view-section">
+      
+      <div class="card" id="videoSection" style="margin-bottom: 24px;">
+        <h3 style="margin-top: 0; color: var(--text-main);">🎬 Live Video Sync &amp; Editor</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
+          Load a video to watch, and load an SRT file to edit. (Plays locally, 0 lag).
+        </p>
+          
+        <div style="display: flex; gap: 15px;" id="uploadBoxes">
+          <div class="file-upload-wrapper" id="videoUploadWrapper" style="flex: 1; padding: 15px;">
+            <input id="videoFile" type="file" accept="video/mp4,video/webm,video/ogg" />
+            <div style="pointer-events: none;">
+              <div style="font-size: 2rem; margin-bottom: 10px;">🎞️</div>
+              <strong style="color: white;">1. Select Video File</strong>
+            </div>
+          </div>
+
+          <div class="file-upload-wrapper" id="srtEditUploadWrapper" style="flex: 1; padding: 15px;">
+            <input id="srtEditFile" type="file" accept=".srt" />
+            <div style="pointer-events: none;">
+              <div style="font-size: 2rem; margin-bottom: 10px;">📝</div>
+              <strong style="color: white;">2. Load SRT to Edit</strong>
+            </div>
+          </div>
         </div>
-        <div id="editorArea"></div>
+          
+          <div style="position: relative; margin-top: 15px; display: none;" id="videoContainer">
+          <video id="videoPlayer" controls style="width: 100%; border-radius: 8px; background: #000; max-height: 400px;"></video>
+            <div id="videoSubtitleOverlay" style="position: absolute; bottom: 10%; left: 5%; right: 5%; text-align: center; color: #ffd700; font-size: 1.8rem; font-weight: bold; text-shadow: 2px 2px 4px #000, -2px -2px 4px #000; pointer-events: none; font-family: sans-serif; z-index: 10;"></div>
+        </div>
+      </div>
+
+      <div id="editorWrapper" style="display:none;">
+          <div id="editorArea"></div>
+      </div>
+
+        <div class="btn-row" style="justify-content: flex-end;">
+          <button id="btnSaveActive" style="background: #2d2d35; color: white;">⭐ Save Line</button>
+          <button id="btnExportSrt" style="background: var(--success); color: black;">⬇ Export SRT</button>
+        </div>
+
     </div>
 
-  </div> <script>
+  </div>
+
+  <script>
   const API_BASE = ""; // Use current domain
   
   // --- PREMIUM LOCK UI ---
@@ -474,6 +620,13 @@
   const editorArea = document.getElementById("editorArea");
   const editorWrapper = document.getElementById("editorWrapper");
   const progressSection = document.getElementById("progressSection");
+  const btnSaveActive = document.getElementById("btnSaveActive");
+  const btnExportSrt = document.getElementById("btnExportSrt");
+  const videoFile = document.getElementById("videoFile");
+  const videoContainer = document.getElementById("videoContainer");
+  const videoPlayer = document.getElementById("videoPlayer");
+  const videoUploadWrapper = document.getElementById("videoUploadWrapper");
+  const videoSubtitleOverlay = document.getElementById("videoSubtitleOverlay");
   
   // Progress Elements
   const bar = document.getElementById("progressBar");
@@ -517,6 +670,7 @@
     progressSection.style.display = "block";
     editorWrapper.style.display = "block";
     btnPause.style.display = "inline-block";
+    switchTab('edit');
     
     // Scroll to editor
     setTimeout(() => {
@@ -634,14 +788,31 @@
     
     // Create HTML
     row.innerHTML = `
-      <div class="sub-times">
-        <label>#${index}</label>
-        <input type="text" class="time-start" value="${start ? start.trim() : ''}">
-        <input type="text" class="time-end" value="${end ? end.trim() : ''}">
+      <div class="sub-times" style="width: 170px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <label style="color: var(--accent); font-weight: bold;">#<span class="row-index">${index}</span></label>
+            <div>
+                <button class="btn-icon add-row-btn" title="Insert new line below">+</button>
+                <button class="btn-icon del-row-btn" title="Delete this line" style="color: var(--error);">-</button>
+            </div>
+        </div>
         
-        <button class="btn-save-line" title="Save this translation to training data for future AI improvement" style="margin-top:5px; background:#2d2d35; border:1px solid #444; font-size:0.7rem; padding:4px;">
-           ⭐ Save
-        </button>
+        <div class="time-nudge-group">
+            <button class="nudge-btn" onclick="nudgeTime(this, 'start', -0.1)" title="-100ms">◀</button>
+            <input type="text" class="time-start" value="${start ? start.trim() : ''}" style="text-align: center; padding: 4px;">
+            <button class="nudge-btn" onclick="nudgeTime(this, 'start', 0.1)" title="+100ms">▶</button>
+        </div>
+        
+        <div class="time-nudge-group">
+            <button class="nudge-btn" onclick="nudgeTime(this, 'end', -0.1)" title="-100ms">◀</button>
+            <input type="text" class="time-end" value="${end ? end.trim() : ''}" style="text-align: center; padding: 4px;">
+            <button class="nudge-btn" onclick="nudgeTime(this, 'end', 0.1)" title="+100ms">▶</button>
+        </div>
+
+        <div style="display: flex; gap: 5px; margin-top: 5px;">
+            <button class="btn-play-line" title="Play video from this line (Alt+Space)" style="flex:1; background:#3b82f6; color:white; border:none; font-size:0.7rem; padding:4px; border-radius:4px; cursor:pointer;">▶ Play</button>
+            <button class="btn-save-line" title="Save this translation" style="flex:1; background:#2d2d35; color:white; border:1px solid #444; font-size:0.7rem; padding:4px; border-radius:4px; cursor:pointer;">⭐ Save</button>
+        </div>
       </div>
       
       <div class="sub-text">
@@ -716,6 +887,226 @@
     btnPause.textContent = isPausing ? "Resume" : "Pause";
     btnPause.style.background = isPausing ? "var(--success)" : "#f59e0b";
   });
+
+  btnSaveActive.addEventListener("click", () => {
+    const activeEl = document.activeElement;
+    const row = activeEl?.closest?.(".sub-row");
+    if (!row) {
+      setStatus("Select a subtitle line to save.", "var(--text-muted)");
+      return;
+    }
+    const saveBtn = row.querySelector(".btn-save-line");
+    if (saveBtn) saveBtn.click();
+  });
+
+  btnExportSrt.addEventListener("click", () => {
+    if (btnDownload.disabled) {
+      setStatus("Nothing to export yet.", "var(--text-muted)");
+      return;
+    }
+    btnDownload.click();
+  });
+
+  // ==========================================
+  // 🗂️ TAB MENU LOGIC
+  // ==========================================
+  function switchTab(tabName) {
+    // Hide everything first
+    document.getElementById('view-translate').classList.remove('active');
+    document.getElementById('view-edit').classList.remove('active');
+    document.getElementById('btnTab1').classList.remove('active');
+    document.getElementById('btnTab2').classList.remove('active');
+
+    // Show the clicked tab
+    if (tabName === 'translate') {
+      document.getElementById('view-translate').classList.add('active');
+      document.getElementById('btnTab1').classList.add('active');
+      editorWrapper.style.display = "none";
+    } else if (tabName === 'edit') {
+      document.getElementById('view-edit').classList.add('active');
+      document.getElementById('btnTab2').classList.add('active');
+      editorWrapper.style.display = "block";
+    }
+  }
+
+    // ==========================================
+    // 🎬 VIDEO FILE LOADER + TIME HELPERS
+    // ==========================================
+      // 1. ROBUST Time Converter (Handles 00:00:01,500 AND 00:00:01.500)
+      function timeStrToSeconds(timeStr) {
+        if (!timeStr) return 0;
+        timeStr = timeStr.trim();
+      
+        // Replace comma with dot to standardize (00:00:01,500 -> 00:00:01.500)
+        const cleanStr = timeStr.replace(',', '.');
+        const parts = cleanStr.split(':');
+      
+        if (parts.length < 3) return 0;
+      
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const s = parseFloat(parts[2]); // parseFloat handles the milliseconds (e.g. 01.500)
+      
+        return (h * 3600) + (m * 60) + s;
+      }
+
+    videoFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      videoPlayer.src = url;
+      videoContainer.style.display = 'block';
+      videoUploadWrapper.style.display = 'none';
+      videoSubtitleOverlay.textContent = "";
+    });
+
+      videoPlayer.addEventListener('timeupdate', () => {
+        const currentTime = videoPlayer.currentTime;
+        let foundActive = false;
+
+        const rows = editorArea.querySelectorAll('.sub-row');
+        rows.forEach((row) => {
+          const startStr = row.querySelector('.time-start')?.value;
+          const endStr = row.querySelector('.time-end')?.value;
+          const text = row.querySelector('.text-content')?.value;
+
+          const startTime = timeStrToSeconds(startStr);
+          const endTime = timeStrToSeconds(endStr);
+
+          if (currentTime >= startTime && currentTime <= endTime) {
+            row.style.borderLeftColor = 'var(--success)';
+            videoSubtitleOverlay.textContent = text || "";
+            foundActive = true;
+          } else {
+            row.style.borderLeftColor = 'var(--border)';
+          }
+        });
+
+        if (!foundActive) {
+          videoSubtitleOverlay.textContent = "";
+        }
+      });
+
+      editorArea.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-play-line')) {
+          const row = e.target.closest('.sub-row');
+          const startTimeStr = row.querySelector('.time-start').value;
+          const startSeconds = timeStrToSeconds(startTimeStr);
+          
+          if (videoPlayer.src) {
+            videoPlayer.currentTime = startSeconds;
+            videoPlayer.play();
+          } else {
+            alert("Please select a video file first!");
+          }
+        }
+      });
+
+      // ==========================================
+      // 📝 LOAD EXISTING SRT TO EDITOR
+      // ==========================================
+      const srtEditFile = document.getElementById('srtEditFile');
+  
+      srtEditFile.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // 1. Read the file
+        const text = await file.text();
+      
+        // 2. Clean up line breaks and split into blocks
+        const rawText = text.replace(/\r\n/g, "\n");
+        const blocks = rawText.split(/\n\n+/).filter(b => b.trim());
+      
+        // 3. Clear the current editor
+        editorArea.innerHTML = "";
+      
+        // 4. Parse blocks and add to editor
+        blocks.forEach((block) => {
+          const lines = block.split('\n');
+          if (lines.length >= 3) {
+            const index = lines[0];
+            const timeStr = lines[1];
+            const textContent = lines.slice(2).join('\n');
+              
+            // Use your existing function to draw the row
+            appendEditorRow(index, timeStr, textContent);
+          }
+        });
+
+          // 5. Auto-Jump to First Subtitle (So you see it works!)
+          const firstRow = document.querySelector('.sub-row');
+          if (firstRow && videoPlayer.src) {
+            const firstTime = firstRow.querySelector('.time-start').value;
+            videoPlayer.currentTime = timeStrToSeconds(firstTime) + 0.1; // Jump slightly into the line
+            // Force an update of the overlay immediately
+            videoPlayer.dispatchEvent(new Event('timeupdate'));
+          }
+
+          // 6. Show the editor and download button
+          document.getElementById('editorWrapper').style.display = "block";
+          document.getElementById('btnDownload').disabled = false;
+          document.getElementById('btnDownload').style.background = "var(--success)";
+      
+          setStatus("✔ SRT Loaded! Video jumped to start.", "var(--success)");
+      });
+
+    // ==========================================
+    // ⚙️ AEGISUB FUNCTIONS & HOTKEYS
+    // ==========================================
+
+    // 1. Time Converter (Seconds back to HH:MM:SS,mmm)
+    function secondsToTimeStr(sec) {
+      if (sec < 0) sec = 0;
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = Math.floor(sec % 60);
+      const ms = Math.round((sec % 1) * 1000);
+      const pad = (n, width = 2) => String(n).padStart(width, '0');
+      return `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms, 3)}`;
+    }
+
+    // 2. Nudge Time (+/- 100ms)
+    window.nudgeTime = function(button, type, amountSeconds) {
+      const row = button.closest('.sub-row');
+      const input = type === 'start' ? row.querySelector('.time-start') : row.querySelector('.time-end');
+      let currentSeconds = timeStrToSeconds(input.value);
+      currentSeconds += amountSeconds;
+      input.value = secondsToTimeStr(currentSeconds);
+    };
+
+    // 3. Row Management (Insert / Delete)
+    editorArea.addEventListener('click', (e) => {
+      // DELETE ROW
+      if (e.target.classList.contains('del-row-btn')) {
+        if (confirm("Delete this subtitle line?")) {
+          e.target.closest('.sub-row').remove();
+          updateRowNumbers();
+        }
+      }
+      // INSERT ROW BELOW
+      if (e.target.classList.contains('add-row-btn')) {
+        const currentRow = e.target.closest('.sub-row');
+        const endTime = currentRow.querySelector('.time-end').value;
+          
+        // Create new row with empty text, starting exactly when the previous one ends
+        appendEditorRow("Temp", `${endTime} --> ${endTime}`, "");
+          
+        // Move the new row right below the current one
+        const newRow = editorArea.lastElementChild; 
+        currentRow.after(newRow);
+        updateRowNumbers();
+        newRow.querySelector('.text-content').focus(); // Auto-focus new text
+      }
+    });
+
+    function updateRowNumbers() {
+      const rows = editorArea.querySelectorAll('.sub-row');
+      rows.forEach((row, index) => {
+        row.querySelector('.row-index').textContent = index + 1;
+      });
+    }
+
 
   </script>
 </body>
