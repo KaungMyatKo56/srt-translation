@@ -301,24 +301,41 @@
     }
     .btn-icon:hover { background: #333; }
 
-    .editor-toolbar {
+
+    /* --- FORMATTING TOOLS CSS --- */
+    .format-toolbar {
       display: flex;
-      gap: 15px;
-      background: #111;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
+      gap: 8px;
       margin-bottom: 15px;
-      font-size: 0.85rem;
-      color: var(--text-muted);
+      padding: 10px;
+      background: #1a1a20;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      align-items: center;
     }
-    .hotkey-badge {
-      background: #333;
-      color: #ffd700;
-      padding: 2px 6px;
+    
+    .tool-btn {
+      background: #2d2d35;
+      color: white;
+      border: 1px solid #444;
+      padding: 6px 12px;
       border-radius: 4px;
-      font-family: monospace;
-      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    
+    .tool-btn:hover {
+      background: var(--accent);
+      color: black;
+      border-color: var(--accent);
+    }
+
+    .tool-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+      margin: 0 5px;
     }
 
     .preview-grid {
@@ -340,6 +357,14 @@
     ::-webkit-scrollbar-track { background: var(--bg-color); }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    .app-footer {
+      margin-top: 28px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+    }
 
   </style>
 </head>
@@ -502,13 +527,23 @@
         </p>
           
         <div style="display: flex; gap: 15px;" id="uploadBoxes">
-          <div class="file-upload-wrapper" id="videoUploadWrapper" style="flex: 1; padding: 15px;">
-            <input id="videoFile" type="file" accept="video/mp4,video/webm,video/ogg" />
-            <div style="pointer-events: none;">
-              <div style="font-size: 2rem; margin-bottom: 10px;">🎞️</div>
-              <strong style="color: white;">1. Select Video File</strong>
-            </div>
-          </div>
+          <div class="file-upload-wrapper" id="videoUploadWrapper" style="flex: 1; padding: 15px; cursor: default; display: flex; flex-direction: column; justify-content: center;">
+                  
+                  <div style="position: relative; padding-bottom: 10px;">
+                      <input id="videoFile" type="file" accept="video/mp4,video/webm,video/ogg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 1;" />
+                      <div style="pointer-events: none;">
+                          <div style="font-size: 2rem; margin-bottom: 5px;">🎞️</div>
+                          <strong style="color: white;">1. Select Video File</strong>
+                      </div>
+                  </div>
+
+                  <div style="border-top: 1px solid var(--border); margin: 10px 0;"></div>
+
+                  <div style="position: relative; z-index: 2; display: flex; gap: 8px;">
+                      <input type="text" id="videoUrlInput" placeholder="Or paste direct link (.mp4)" style="flex: 1; padding: 8px; background: #000; border: 1px solid var(--border); color: white; border-radius: 4px; font-size: 0.8rem;">
+                      <button id="btnLoadVideoUrl" style="padding: 8px 12px; background: var(--accent); color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">Load</button>
+                  </div>
+              </div>
 
           <div class="file-upload-wrapper" id="srtEditUploadWrapper" style="flex: 1; padding: 15px;">
             <input id="srtEditFile" type="file" accept=".srt" />
@@ -526,6 +561,22 @@
       </div>
 
       <div id="editorWrapper" style="display:none;">
+          <div class="format-toolbar">
+            <span style="color: var(--text-muted); font-size: 0.85rem; margin-right: 10px;">Tools:</span>
+            <button class="tool-btn" onclick="applyFormat('<b>', '</b>')" title="Bold">B</button>
+            <button class="tool-btn" onclick="applyFormat('<i>', '</i>')" style="font-style: italic;" title="Italic">I</button>
+            <button class="tool-btn" onclick="applyFormat('<u>', '</u>')" style="text-decoration: underline;" title="Underline">U</button>
+              
+            <div class="tool-divider"></div>
+              
+            <input type="color" id="colorPicker" value="#ff0000" style="background: transparent; border: none; cursor: pointer; height: 30px; width: 30px; padding: 0;">
+            <button class="tool-btn" onclick="applyColor()" title="Apply Color to Text">🎨 Color</button>
+              
+            <div class="tool-divider"></div>
+
+            <button class="tool-btn" onclick="clearText()" title="Clear text box" style="color: #ef4444;">🗑️ Clear</button>
+          </div>
+
           <div id="editorArea"></div>
       </div>
 
@@ -537,6 +588,8 @@
     </div>
 
   </div>
+
+  <footer class="app-footer">2026 ver 1.2</footer>
 
   <script>
   const API_BASE = ""; // Use current domain
@@ -627,6 +680,8 @@
   const videoPlayer = document.getElementById("videoPlayer");
   const videoUploadWrapper = document.getElementById("videoUploadWrapper");
   const videoSubtitleOverlay = document.getElementById("videoSubtitleOverlay");
+  const btnLoadVideoUrl = document.getElementById("btnLoadVideoUrl");
+  const videoUrlInput = document.getElementById("videoUrlInput");
   
   // Progress Elements
   const bar = document.getElementById("progressBar");
@@ -960,6 +1015,63 @@
       videoSubtitleOverlay.textContent = "";
     });
 
+    // ==========================================
+    // 🔗 LOAD VIDEO FROM URL (With Auto-pCloud Converter)
+    // ==========================================
+    btnLoadVideoUrl.addEventListener('click', async () => {
+      const url = videoUrlInput.value.trim();
+      
+      if (!url) {
+        setStatus("⚠ Please enter a valid video URL", "var(--error)");
+        return;
+      }
+
+      let finalStreamingUrl = url;
+      const btnOriginalText = btnLoadVideoUrl.textContent;
+      
+      // Check if it is a pCloud link
+      if (url.toLowerCase().includes('pcloud.')) {
+        setStatus("Converting pCloud link...", "var(--accent)");
+        btnLoadVideoUrl.textContent = "⏳...";
+        btnLoadVideoUrl.disabled = true;
+        
+        try {
+          const response = await fetch(`${API_BASE}/pcloud-direct`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+          });
+          
+          const data = await response.json();
+          
+          if (data.directLink) {
+            finalStreamingUrl = data.directLink;
+            console.log("Extracted Direct Link:", finalStreamingUrl);
+          } else {
+            throw new Error(data.error || "Could not extract direct link.");
+          }
+        } catch (err) {
+          setStatus("❌ pCloud Error: " + err.message, "var(--error)");
+          btnLoadVideoUrl.textContent = btnOriginalText;
+          btnLoadVideoUrl.disabled = false;
+          return; // Stop here if conversion failed
+        }
+      }
+
+      // Load the final URL into the video player
+      videoPlayer.src = finalStreamingUrl;
+      videoContainer.style.display = 'block';
+      
+      // Hide the upload box
+      document.getElementById('videoUploadWrapper').style.display = 'none';
+      
+      setStatus("✔ Video loaded successfully!", "var(--success)");
+      
+      // Reset button
+      btnLoadVideoUrl.textContent = btnOriginalText;
+      btnLoadVideoUrl.disabled = false;
+    });
+
       videoPlayer.addEventListener('timeupdate', () => {
         const currentTime = videoPlayer.currentTime;
         let foundActive = false;
@@ -1106,6 +1218,55 @@
         row.querySelector('.row-index').textContent = index + 1;
       });
     }
+
+  // ==========================================
+  // 🛠️ EDITOR TOOLS (Formatting)
+  // ==========================================
+  let activeTextarea = null;
+
+  // 1. Keep track of which text box the user clicked last
+  document.addEventListener('focusin', (e) => {
+      if (e.target.classList.contains('text-content')) {
+          activeTextarea = e.target;
+      }
+  });
+
+  // 2. Wrap selected text with tags (Bold, Italic, Underline)
+  window.applyFormat = function(tagOpen, tagClose) {
+      if (!activeTextarea) {
+          setStatus("⚠ Please click inside a text box first!", "var(--error)");
+          return;
+      }
+
+      const start = activeTextarea.selectionStart;
+      const end = activeTextarea.selectionEnd;
+      const text = activeTextarea.value;
+      const selectedText = text.substring(start, end);
+      
+      const newText = text.substring(0, start) + tagOpen + selectedText + tagClose + text.substring(end);
+      activeTextarea.value = newText;
+      
+      // Put focus back and highlight the newly wrapped text
+      activeTextarea.focus();
+      activeTextarea.setSelectionRange(start + tagOpen.length, end + tagOpen.length);
+      
+      // Update the video overlay instantly
+      activeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  // 3. Apply Custom Color Tag
+  window.applyColor = function() {
+      const hexColor = document.getElementById('colorPicker').value;
+      applyFormat(`<font color="${hexColor}">`, '</font>');
+  };
+
+  // 4. Clear Text Button
+  window.clearText = function() {
+      if (!activeTextarea) return;
+      activeTextarea.value = "";
+      activeTextarea.focus();
+      activeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+  };
 
 
   </script>

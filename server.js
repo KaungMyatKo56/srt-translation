@@ -499,6 +499,49 @@ app.get("/validate-vip/:code", async (req, res) => {
     res.json({ valid: true });
 });
 
+/* ---------------- pCLOUD LINK CONVERTER ---------------- */
+app.post("/pcloud-direct", async (req, res) => {
+    try {
+        const { url } = req.body;
+        
+        // 1. Extract the "code" from the pCloud share link
+        // Example: https://u.pcloud.link/publink/show?code=XZ...
+        let code = "";
+        try {
+            const urlObj = new URL(url);
+            code = urlObj.searchParams.get('code');
+            
+            // Handle alternate pCloud URL formats if needed
+            if (!code && url.includes("/publink/show?code=")) {
+                code = url.split("code=")[1].split("&")[0];
+            }
+        } catch (e) {
+            return res.status(400).json({ error: "Invalid URL format" });
+        }
+
+        if (!code) {
+            return res.status(400).json({ error: "Could not find pCloud code in URL" });
+        }
+
+        // 2. Ask pCloud API for the direct download/streaming link
+        const pcloudApi = `https://api.pcloud.com/getpublinkdownload?code=${code}`;
+        const response = await fetch(pcloudApi);
+        const data = await response.json();
+
+        // 3. Construct the direct streaming URL
+        if (data.result === 0 && data.hosts && data.hosts.length > 0) {
+            const directLink = `https://${data.hosts[0]}${data.path}`;
+            return res.json({ directLink });
+        } else {
+            return res.status(400).json({ error: data.error || "Failed to get direct link from pCloud" });
+        }
+
+    } catch (err) {
+        console.error("pCloud conversion error:", err);
+        res.status(500).json({ error: "Server error converting link" });
+    }
+});
+
 /* ---------------- START ---------------- */
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://127.0.0.1:${PORT}`);
